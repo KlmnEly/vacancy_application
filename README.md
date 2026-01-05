@@ -29,6 +29,28 @@ npm run build
 npm run start:prod
 ```
 
+## Enums
+
+1. Modality
+```
+REMOTO = 'REMOTO',
+HIBRIDO = 'HIBRIDO',
+PRESENCIAL = 'PRESENCIAL'
+```
+
+2. Role
+```
+CODER = 'CODER',
+GESTOR = 'GESTOR',
+ADMIN = 'ADMIN',
+```
+
+3. Vacancy Status
+```
+ACTIVE = 'ACTIVE',
+INACTIVE = 'INACTIVE',
+```
+
 ## URL de Swagger
 
 La documentación Swagger está disponible en:
