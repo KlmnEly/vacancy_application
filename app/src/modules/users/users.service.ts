@@ -7,7 +7,7 @@ import { Repository } from 'typeorm';
 import { UserResponseDto } from './dto/response-user.dto';
 import { UserAuthResponseDto } from './dto/response-user-auth.dto';
 import { ConflictException } from '@nestjs/common';
-import bcrypt from 'node_modules/bcryptjs';
+import * as bcrypt from 'bcryptjs';
 import { NotFoundException } from '@nestjs/common';
 
 @Injectable()

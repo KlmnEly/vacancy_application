@@ -14,10 +14,31 @@ async function bootstrap() {
     .setTitle('Vacancy Application API')
     .setDescription('API documentation for the Vacancy Application')
     .setVersion('1.0')
-    .addBearerAuth()
+    // register a named bearer auth scheme for Swagger (use the same name in controllers if using @ApiBearerAuth)
+    .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'access-token')
     .build();
+
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/v1/docs', app, document);
+  // Apply global security requirement so Swagger UI includes the bearer token for secured endpoints
+  (document as any).security = [{ 'access-token': [] }];
+  SwaggerModule.setup('api/v1/docs', app, document, {
+    swaggerOptions: {
+      authAction: {
+        // pre-configure the authorize modal entry name so users know to include the Bearer prefix
+        'access-token': {
+          name: 'Authorization',
+          schema: {
+            type: 'http',
+            in: 'header',
+            name: 'Authorization',
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+          },
+          value: 'Bearer '
+        }
+      }
+    }
+  });
 
   // Global validation pipe
   app.useGlobalPipes(

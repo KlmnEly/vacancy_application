@@ -59,7 +59,7 @@ describe('RolesController', () => {
   // Prueba del método FindOne
   describe('findOne', () => {
     it('should return a role by id', async () => {
-      const id = 'some-uuid';
+      const id = 1;
       const result = await controller.findOne(id);
 
       expect(result).toEqual({

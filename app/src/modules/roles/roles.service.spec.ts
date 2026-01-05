@@ -73,14 +73,14 @@ describe('RolesService', () => {
     it('should throw NotFoundException if role does not exist', async () => {
       mockRoleRepository.findOne.mockResolvedValue(null);
 
-      await expect(service.getById('invalid-uuid')).rejects.toThrow(NotFoundException);
+      await expect(service.getById(999)).rejects.toThrow(NotFoundException);
     });
 
     it('should return a role if it exists', async () => {
-      const expectedRole = { id_role: 'uuid', name: 'ADMIN', isActive: true };
+      const expectedRole = { id_role: 1, name: 'ADMIN', isActive: true };
       mockRoleRepository.findOne.mockResolvedValue(expectedRole);
 
-      const result = await service.getById('uuid');
+      const result = await service.getById(1);
       expect(result).toEqual(expectedRole);
     });
   });
