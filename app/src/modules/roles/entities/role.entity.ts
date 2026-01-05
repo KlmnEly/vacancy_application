@@ -1,5 +1,6 @@
 import { BaseCatalogue } from "src/common/timestamp-base-entity";
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { User } from "src/modules/users/entities/user.entity";
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity('roles')
 export class Role extends BaseCatalogue {
@@ -12,4 +13,6 @@ export class Role extends BaseCatalogue {
     @Column({ name: 'is_active', default: true })
     isActive: boolean;
 
+    @OneToMany(() => User, (user) => user.role)
+    users: User[];
 }
