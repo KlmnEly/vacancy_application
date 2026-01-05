@@ -9,6 +9,8 @@ import { join } from 'path';
 import { RolesModule } from './modules/roles/roles.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { VacanciesModule } from './modules/vacancies/vacancies.module';
+
 const runningInDocker = process.env.RUNNING_IN_DOCKER === 'true';
 const externalEnvPath = join(__dirname, '../../', '.env');
 @Module({
@@ -23,7 +25,8 @@ const externalEnvPath = join(__dirname, '../../', '.env');
     DatabaseModule,
     RolesModule,
     UsersModule,
-    AuthModule
+    AuthModule,
+    VacanciesModule,
   ],
 controllers: [AppController],
   providers: [AppService],

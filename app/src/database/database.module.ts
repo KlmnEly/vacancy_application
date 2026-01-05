@@ -2,6 +2,7 @@ import { Module, Logger, OnModuleInit } from '@nestjs/common';
 import { TypeOrmModule, InjectDataSource } from '@nestjs/typeorm';
 import { ConfigService, ConfigModule } from '@nestjs/config';
 import { DataSource } from 'typeorm';
+import { runSeed } from '../scripts/seed';
 
 @Module({
   imports: [
@@ -53,6 +54,11 @@ export class DatabaseModule implements OnModuleInit {
     try {
       await this.dataSource.query('SELECT 1');
       this.logger.log('✔️ Database connection established successfully.');
+      try {
+        await runSeed(this.dataSource);
+      } catch (err) {
+        this.logger.error('Seeding failed:', err?.message ?? err);
+      }
     } catch (err) {
       this.logger.error('❌ Database connection failed:', err?.message ?? err);
       throw err;
