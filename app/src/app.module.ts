@@ -7,6 +7,7 @@ import configuration from './config/configuration';
 import { validationSchema } from './config/validation.schema';
 import { join } from 'path';
 import { RolesModule } from './modules/roles/roles.module';
+import { UsersModule } from './modules/users/users.module';
 const runningInDocker = process.env.RUNNING_IN_DOCKER === 'true';
 const externalEnvPath = join(__dirname, '../../', '.env');
 @Module({
@@ -19,7 +20,8 @@ const externalEnvPath = join(__dirname, '../../', '.env');
       envFilePath: runningInDocker ? undefined : externalEnvPath,
     }),
     DatabaseModule,
-    RolesModule
+    RolesModule,
+    UsersModule
   ],
 controllers: [AppController],
   providers: [AppService],
