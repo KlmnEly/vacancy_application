@@ -4,12 +4,16 @@ import { UpdateVacancyDto } from './dto/update-vacancy.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Vacancy } from './entities/vacancy.entity';
 import { Repository } from 'typeorm';
+import { Application } from '../applications/entities/application.entity';
+import { VacancyStatus } from 'src/common/enums/vacancy-status.enum';
 
 @Injectable()
 export class VacanciesService {
   constructor(
     @InjectRepository(Vacancy)
     private readonly vacancyRepository: Repository<Vacancy>,
+    @InjectRepository(Application)
+    private readonly applicationRepository: Repository<Application>,
   ) {}
 
   async create(createVacancyDto: CreateVacancyDto) {
@@ -23,7 +27,17 @@ export class VacanciesService {
 
   async findAll() {
     try {
-      return await this.vacancyRepository.find();
+      const vacancies = await this.vacancyRepository.find();
+      const results = await Promise.all(
+        vacancies.map(async (v) => {
+          const currentCount = await this.applicationRepository.count({ where: { vacancyId: v.idVacancy } });
+          const remainingSlots = v.maxApplicants !== undefined && v.maxApplicants !== null ? Math.max(0, v.maxApplicants - currentCount) : null;
+          const isActive = v.status === VacancyStatus.ACTIVE;
+          const canApply = isActive && (remainingSlots === null ? true : remainingSlots > 0);
+          return { ...v, remainingSlots, canApply };
+        }),
+      );
+      return results;
     } catch (err) {
       throw new InternalServerErrorException('Error fetching vacancies');
     }
@@ -35,7 +49,11 @@ export class VacanciesService {
     try {
       const vacancy = await this.vacancyRepository.findOne({ where: { idVacancy: id } });
       if (!vacancy) throw new NotFoundException(`Vacancy with id ${id} not found`);
-      return vacancy;
+      const currentCount = await this.applicationRepository.count({ where: { vacancyId: vacancy.idVacancy } });
+      const remainingSlots = vacancy.maxApplicants !== undefined && vacancy.maxApplicants !== null ? Math.max(0, vacancy.maxApplicants - currentCount) : null;
+      const isActive = vacancy.status === VacancyStatus.ACTIVE;
+      const canApply = isActive && (remainingSlots === null ? true : remainingSlots > 0);
+      return { ...vacancy, remainingSlots, canApply };
     } catch (err: any) {
       if (err.status) throw err;
       throw new InternalServerErrorException('Error fetching vacancy');

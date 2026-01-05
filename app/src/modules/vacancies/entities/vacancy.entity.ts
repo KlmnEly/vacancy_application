@@ -2,6 +2,7 @@ import { IsOptional, MinLength } from "class-validator";
 import { Modality } from "src/common/enums/modality.enum";
 import { BaseCatalogue } from "src/common/timestamp-base-entity"
 import { Column, Entity, PrimaryGeneratedColumn } from "typeorm"
+import { VacancyStatus } from "src/common/enums/vacancy-status.enum";
 
 @Entity('vacancies')
 export class Vacancy extends BaseCatalogue {
@@ -39,4 +40,7 @@ export class Vacancy extends BaseCatalogue {
 
     @Column()
     maxApplicants: number;
+
+    @Column({ type: 'enum', enum: VacancyStatus, default: VacancyStatus.ACTIVE })
+    status: VacancyStatus;
 }
