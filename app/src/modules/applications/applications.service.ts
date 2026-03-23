@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { Vacancy } from '../vacancies/entities/vacancy.entity';
 import { VacancyStatus } from 'src/common/enums/vacancy-status.enum';
 import { User } from '../users/entities/user.entity';
+import { ApplicationStatus } from 'src/common/enums/application-status.enum';
 
 @Injectable()
 export class ApplicationsService {
@@ -40,15 +41,10 @@ export class ApplicationsService {
       const user = await this.userRepository.findOne({ where: { idUser: createApplicationDto.userId } });
       if (!user) throw new NotFoundException(`User with id ${createApplicationDto.userId} not found`);
 
-      // ensure user does not exceed active applications limit (max 3)
-      const userApplicationsCount = await this.applicationRepository.count({ where: { userId: createApplicationDto.userId } });
-      if (userApplicationsCount >= 3) {
-        throw new BadRequestException('User has reached the maximum of 3 active applications');
-      }
-
       const payload: Partial<Application> = {
         userId: createApplicationDto.userId,
         vacancyId: createApplicationDto.vacancyId,
+        status: ApplicationStatus.PENDING,
         appliedAt: createApplicationDto.appliedAt ? new Date(createApplicationDto.appliedAt) : new Date(),
       };
 
@@ -89,6 +85,17 @@ export class ApplicationsService {
       throw new InternalServerErrorException('Error fetching application');
     }
   }
+
+  async findByUserId(userId: number) {
+  try {
+    return await this.applicationRepository.find({
+      where: { userId: userId },
+      relations: ['vacancy']
+    });
+  } catch (err) {
+    throw new InternalServerErrorException('Error fetching your applications');
+  }
+}
 
   async update(id: number, updateApplicationDto: UpdateApplicationDto) {
     try {

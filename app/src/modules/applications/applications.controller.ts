@@ -28,6 +28,13 @@ export class ApplicationsController {
     return this.applicationsService.findAll();
   }
 
+  @Get('my-history')
+  @UseGuards(JwtAuthGuard)
+  async getMyHistory (@Req() req: any) {
+    const userId = req.user.sub;
+    return this.applicationsService.findByUserId(userId);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.applicationsService.findOne(+id);

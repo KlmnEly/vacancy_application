@@ -43,4 +43,7 @@ export class Vacancy extends BaseCatalogue {
 
     @Column({ type: 'enum', enum: VacancyStatus, default: VacancyStatus.ACTIVE })
     status: VacancyStatus;
+
+    @Column({ name: 'is_active', default: true })
+    isActive: boolean;
 }

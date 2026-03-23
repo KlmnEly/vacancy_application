@@ -22,6 +22,13 @@ export class VacanciesController {
   }
 
   @Get()
+  findAllActiveVacancies() {
+    return this.vacanciesService.findAllActiveVacancies();
+  }
+
+  @Get('all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.GESTOR, Role.ADMIN)
   findAll() {
     return this.vacanciesService.findAll();
   }
@@ -40,7 +47,7 @@ export class VacanciesController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.GESTOR)
   remove(@Param('id') id: string) {
     return this.vacanciesService.remove(+id);
   }

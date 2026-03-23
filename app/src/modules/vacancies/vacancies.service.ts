@@ -25,9 +25,18 @@ export class VacanciesService {
     }
   }
 
-  async findAll() {
+  async findAllActiveVacancies() {
     try {
-      const vacancies = await this.vacancyRepository.find();
+      const vacancies = await this.vacancyRepository.find({
+        where: {
+          isActive: true
+        }
+      });
+
+      if (!vacancies || vacancies.length === 0) {
+        throw new NotFoundException('Active vacancies not found');
+      }
+
       const results = await Promise.all(
         vacancies.map(async (v) => {
           const currentCount = await this.applicationRepository.count({ where: { vacancyId: v.idVacancy } });
@@ -38,8 +47,24 @@ export class VacanciesService {
         }),
       );
       return results;
-    } catch (err) {
-      throw new InternalServerErrorException('Error fetching vacancies');
+    } catch (err: any) {
+      if (err.response?.statusCode) throw err;
+      throw new InternalServerErrorException('Error fetching active vacancies.');
+    }
+  }
+
+  async findAll() {
+    try {
+      const vacancies = await this.vacancyRepository.find();
+
+      if (!vacancies || vacancies.length === 0) {
+        throw new NotFoundException('Vacancies not found.');
+      }
+
+      return vacancies;
+    } catch (err: any) {
+      if (err.response?.statusCode) throw err;
+      throw new InternalServerErrorException('Error fetching vacancies.');
     }
   }
 
@@ -72,14 +97,16 @@ export class VacanciesService {
   }
 
   async remove(id: number) {
-    try {
-      const vacancy = await this.vacancyRepository.findOne({ where: { idVacancy: id } });
-      if (!vacancy) throw new NotFoundException(`Vacancy with id ${id} not found`);
-      await this.vacancyRepository.delete({ idVacancy: id } as any);
-      return { message: `Vacancy with id ${id} removed` };
-    } catch (err: any) {
-      if (err.status) throw err;
-      throw new InternalServerErrorException('Error removing vacancy');
+    const vacancy = await this.vacancyRepository.findOneBy({ idVacancy: id });
+
+    if (!vacancy) {
+      throw new NotFoundException(`The vacancy with the id ${id} does not exist.`);
     }
+
+    const newIsActiveState = !vacancy.isActive;
+
+    await this.vacancyRepository.update(id, { isActive: newIsActiveState });
+
+    return { message: `The vacancy with the id ${id} was ${newIsActiveState ? 'activated' : 'deactivated'}.` };
   }
 }

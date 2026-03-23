@@ -8,14 +8,14 @@ import { UserResponseDto } from './dto/response-user.dto';
 import { UserAuthResponseDto } from './dto/response-user-auth.dto';
 import { ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
-    private readonly userRepository: Repository<User>
-  ) { }
+    private readonly userRepository: Repository<User>,
+  ) {}
 
   private toResponseDto(user: User): UserResponseDto {
     return {
@@ -25,8 +25,8 @@ export class UsersService {
       created_at: user.createdAt,
       role: {
         idRole: user.role.idRole,
-        name: user.role.name
-      }
+        name: user.role.name,
+      },
     };
   }
 
@@ -44,67 +44,129 @@ export class UsersService {
   }
 
   async createUser(userDto: CreateUserDto): Promise<UserResponseDto> {
-        const existing = await this.userRepository.findOne({
-            where: { email: userDto.email }
-        });
+    const existing = await this.userRepository.findOne({
+      where: { email: userDto.email },
+    });
 
-        if (existing) {
-            throw new ConflictException(`The user with email ${userDto.email} already exists`);
-        }
-
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(userDto.password, salt);
-
-        const newUser = this.userRepository.create({
-            ...userDto,
-            password: hashedPassword,
-        });
-
-        const savedUser = await this.userRepository.save(newUser);
-        return this.findOneById(savedUser.idUser);
+    if (existing) {
+      throw new ConflictException(
+        `The user with email ${userDto.email} already exists`,
+      );
     }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(userDto.password, salt);
+
+    const newUser = this.userRepository.create({
+      ...userDto,
+      password: hashedPassword,
+    });
+
+    const savedUser = await this.userRepository.save(newUser);
+    return this.findOneById(savedUser.idUser);
+  }
 
   async findAllUsers(): Promise<UserResponseDto[]> {
-        const users = await this.userRepository.find({ relations: ['role'] });
-        return users.map(user => this.toResponseDto(user));
-    }
+    const users = await this.userRepository.find({ relations: ['role'] });
+    return users.map((user) => this.toResponseDto(user));
+  }
 
   async findOneById(id: number) {
     const user = await this.userRepository.findOne({
-            where: { idUser: id, isActive: true },
-            relations: ['role'],
-        });
+      where: { idUser: id, isActive: true },
+      relations: ['role'],
+    });
 
-        if (!user) throw new NotFoundException(`ID ${id} not found`);
-        return this.toResponseDto(user);
+    if (!user) throw new NotFoundException(`ID ${id} not found`);
+    return this.toResponseDto(user);
   }
 
   async findOneByEmail(email: string) {
-        const user = await this.userRepository.findOne({
-            where: {
-                email: email,
-                isActive: true
-            },
-            relations: ['role'],
-            select: {
-            idUser: true,
-            fullname: true,
-            email: true,
-            password: true,
-            role: {
-                idRole: true,
-                name: true,
-            },
+    const user = await this.userRepository.findOne({
+      where: {
+        email: email,
+        isActive: true,
+      },
+      relations: ['role'],
+      select: {
+        idUser: true,
+        fullname: true,
+        email: true,
+        password: true,
+        role: {
+          idRole: true,
+          name: true,
         },
-        });
+      },
+    });
 
-        if (!user) throw new NotFoundException(`User with email "${email}" not found`);
-        return this.toAuthResponseDto(user);
+    if (!user)
+      throw new NotFoundException(`User with email "${email}" not found`);
+    return this.toAuthResponseDto(user);
+  }
+
+  async update(
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserResponseDto> {
+    if (updateUserDto.email) {
+      const existingUser = await this.userRepository.findOne({
+        where: { email: updateUserDto.email },
+      });
+
+      if (existingUser && existingUser.idUser !== id) {
+        throw new ConflictException(
+          `The email ${updateUserDto.email} is already in use by another user.`,
+        );
+      }
     }
 
-  // update(id: number, updateUserDto: UpdateUserDto) {
-  //   return `This action updates a #${id} user`;
-  // }
+    const user = await this.userRepository.findOne({
+      where: { idUser: id },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    const userDataToUpdate: any = { ...updateUserDto };
+
+    if (updateUserDto.password) {
+      if (!updateUserDto.currentPassword) {
+        throw new BadRequestException('Debes ingresar la contraseña actual');
+      }
+
+      const isMatch = await bcrypt.compare(
+        updateUserDto.currentPassword,
+        user.password,
+      );
+
+      if (!isMatch) {
+        throw new BadRequestException('La contraseña actual es incorrecta');
+      }
+
+      const salt = await bcrypt.genSalt(10);
+      userDataToUpdate.password = await bcrypt.hash(
+        updateUserDto.password,
+        salt,
+      );
+    }
+
+    delete userDataToUpdate.currentPassword;
+
+    const userPreloaded = await this.userRepository.preload({
+      idUser: id,
+      ...userDataToUpdate,
+    });
+
+    if (!userPreloaded) {
+      throw new NotFoundException(`User with ID ${id} not found`);
+    }
+
+    await this.userRepository.save(userPreloaded);
+
+    return this.findOneById(id);
+  }
 
   // remove(id: number) {
   //   return `This action removes a #${id} user`;

@@ -22,7 +22,7 @@ export class UsersController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  @Roles()
   findOneById(@Param('id') id: string) {
     return this.usersService.findOneById(+id);
   }
@@ -34,10 +34,12 @@ export class UsersController {
     return this.usersService.findOneByEmail(email);
   }
 
-  // @Patch(':id')
-  // update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-  //   return this.usersService.update(+id, updateUserDto);
-  // }
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles()
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(+id, updateUserDto);
+  }
 
   // @Delete(':id')
   // remove(@Param('id') id: string) {
