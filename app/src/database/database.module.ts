@@ -10,33 +10,15 @@ import { runSeed } from '../scripts/seed';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const dbConfig = {
-          host: configService.get<string>('database.host'),
-          port: configService.get<number>('database.port'),
-          username: configService.get<string>('database.username'),
-          password: configService.get<string>('database.password'),
-          database: configService.get<string>('database.database'),
-        };
+        const databaseUrl = configService.get<string>('DATABASE_URL');
 
-        if (
-          !dbConfig.host ||
-          !dbConfig.port ||
-          !dbConfig.username ||
-          !dbConfig.password ||
-          !dbConfig.database
-        ) {
-          throw new Error(
-            'Database configuration is incomplete. Please check your environment variables.',
-          );
+        if (!databaseUrl) {
+          throw new Error('DATABASE_URL is not defined');
         }
+
         return {
           type: 'postgres',
-          host: dbConfig.host,
-          port: dbConfig.port,
-          username: dbConfig.username,
-          password: dbConfig.password,
-          database: dbConfig.database,
-          entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+          url: databaseUrl,
           autoLoadEntities: true,
           synchronize: true,
           logging: ['schema', 'error'],
